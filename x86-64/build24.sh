@@ -87,6 +87,26 @@ else
     echo "⚪️ 未选择 luci-app-openclash"
 fi
 
+# 替换USTC源
+# ====== [MIRROR] Use USTC mirror for ImageBuilder package downloads ======
+IMM_MIRROR="https://mirrors.ustc.edu.cn/immortalwrt"
+
+# repositories.conf is where ImageBuilder opkg feeds are defined (build-time)
+# We replace downloads.immortalwrt.org -> USTC mirror to avoid official downtime.
+found_conf=0
+while IFS= read -r -d '' f; do
+  found_conf=1
+  echo "Patching ImageBuilder repo file: $f"
+  sed -i "s#https\?://downloads\.immortalwrt\.org#${IMM_MIRROR}#g" "$f" || true
+  sed -i "s#https\?://downloads\.openwrt\.org#https://mirrors.ustc.edu.cn/openwrt#g" "$f" || true
+done < <(find /home/build/immortalwrt -maxdepth 3 -type f -name "repositories.conf" -print0 2>/dev/null)
+
+if [ "$found_conf" -eq 0 ]; then
+  echo "WARN: repositories.conf not found under /home/build/immortalwrt (layout may differ)."
+  echo "      Try searching full filesystem next time if needed."
+fi
+# ====== [MIRROR] END ======
+
 # 构建镜像
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Building image with the following packages:"
 echo "$PACKAGES"
